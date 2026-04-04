@@ -1,0 +1,140 @@
+@page "/issues/{Id:int}/edit"
+@inject IssueApiService ApiService
+@inject NavigationManager Nav
+
+<PageTitle>課題内容編集</PageTitle>
+
+<h1>課題内容編集</h1>
+
+@if (_loading)
+{
+    <p>読み込み中...</p>
+}
+else if (_issue is null)
+{
+    <p style="color: red;">@(_errorMessage ?? "課題が見つかりません。")</p>
+}
+else
+{
+    <div style="margin-bottom: 0.5rem;">
+        <label>記入者氏名</label><br />
+        <input type="text" value="@_issue.AuthorName" readonly style="background-color: #f0f0f0;" />
+    </div>
+
+    <div style="margin-bottom: 0.5rem;">
+        <label>登録日時</label><br />
+        <input type="text" value="@_issue.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" readonly style="background-color: #f0f0f0;" />
+    </div>
+
+    @if (_errorMessage is not null)
+    {
+        <p style="color: red;">@_errorMessage</p>
+    }
+
+    <EditForm Model="_model" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+
+        <div style="margin-bottom: 0.5rem;">
+            <label>カテゴリ名</label><br />
+            <InputText @bind-Value="_model.Category" style="width: 200px;" />
+            <ValidationMessage For="() => _model.Category" />
+        </div>
+
+        <div style="margin-bottom: 0.5rem;">
+            <label>課題タイトル <span style="color: red;">*</span></label><br />
+            <InputText @bind-Value="_model.Title" style="width: 400px;" />
+            <ValidationMessage For="() => _model.Title" />
+        </div>
+
+        <div style="margin-bottom: 0.5rem;">
+            <label>課題の文面 <span style="color: red;">*</span></label><br />
+            <InputTextArea @bind-Value="_model.Description" rows="6" style="width: 400px;" />
+            <ValidationMessage For="() => _model.Description" />
+        </div>
+
+        <div style="margin-bottom: 0.5rem;">
+            <label>現在の状況 <span style="color: red;">*</span></label><br />
+            <InputSelect @bind-Value="_model.Status">
+                @foreach (var status in IssueStatusHelper.GetAll())
+                {
+                    <option value="@status">@IssueStatusHelper.GetDisplayName(status)</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div style="margin-bottom: 0.5rem;">
+            <label>解決の文面</label><br />
+            <InputTextArea @bind-Value="_model.Resolution" rows="4" style="width: 400px;" />
+            <ValidationMessage For="() => _model.Resolution" />
+        </div>
+
+        <div style="margin-bottom: 0.5rem;">
+            <label>解決担当者名</label><br />
+            <InputText @bind-Value="_model.ResolverName" style="width: 300px;" />
+            <ValidationMessage For="() => _model.ResolverName" />
+        </div>
+
+        <div style="margin-bottom: 0.5rem;">
+            <label>最終結果日時</label><br />
+            <input type="text" value="@(_issue.ResolvedAt?.ToString("yyyy/MM/dd HH:mm:ss") ?? "")" readonly style="background-color: #f0f0f0;" />
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <button type="submit" disabled="@_submitting">更新</button>
+            <button type="button" @onclick="GoToDetail">戻る</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private IssueDto? _issue;
+    private readonly UpdateIssueDto _model = new();
+    private bool _loading = true;
+    private bool _submitting;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _issue = await ApiService.GetByIdAsync(Id);
+            if (_issue is not null)
+            {
+                _model.Category = _issue.Category;
+                _model.Title = _issue.Title;
+                _model.Description = _issue.Description;
+                _model.Status = _issue.Status;
+                _model.Resolution = _issue.Resolution;
+                _model.ResolverName = _issue.ResolverName;
+            }
+        }
+        catch
+        {
+            _errorMessage = "データの読み込みに失敗しました。";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        _submitting = true;
+        _errorMessage = null;
+        try
+        {
+            await ApiService.UpdateAsync(Id, _model);
+            Nav.NavigateTo($"/issues/{Id}");
+        }
+        catch
+        {
+            _errorMessage = "更新に失敗しました。";
+            _submitting = false;
+        }
+    }
+
+    private void GoToDetail() => Nav.NavigateTo($"/issues/{Id}");
+}

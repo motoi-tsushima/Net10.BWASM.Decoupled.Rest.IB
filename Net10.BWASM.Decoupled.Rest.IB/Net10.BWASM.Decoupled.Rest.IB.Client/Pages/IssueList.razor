@@ -1,0 +1,75 @@
+@page "/issues"
+@inject IssueApiService ApiService
+@inject NavigationManager Nav
+
+<PageTitle>課題一覧</PageTitle>
+
+<h1>課題一覧</h1>
+
+<div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+    <button @onclick="GoToCreate">課題登録</button>
+</div>
+
+@if (_loading)
+{
+    <p>読み込み中...</p>
+}
+else if (_errorMessage is not null)
+{
+    <p style="color: red;">@_errorMessage</p>
+}
+else
+{
+    <table border="1" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th>記入者氏名</th>
+                <th>登録日時</th>
+                <th>カテゴリ名</th>
+                <th>課題タイトル</th>
+                <th>現在の状況</th>
+                <th>解決担当者名</th>
+                <th>最終結果日時</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var issue in _issues)
+            {
+                <tr style="cursor: pointer;" @onclick="() => GoToDetail(issue.Id)">
+                    <td>@issue.AuthorName</td>
+                    <td>@issue.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                    <td>@issue.Category</td>
+                    <td>@issue.Title</td>
+                    <td>@IssueStatusHelper.GetDisplayName(issue.Status)</td>
+                    <td>@issue.ResolverName</td>
+                    <td>@(issue.ResolvedAt?.ToString("yyyy/MM/dd HH:mm"))</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<IssueDto> _issues = [];
+    private bool _loading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _issues = await ApiService.GetAllAsync();
+        }
+        catch
+        {
+            _errorMessage = "データの読み込みに失敗しました。";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void GoToCreate() => Nav.NavigateTo("/issues/create");
+    private void GoToDetail(int id) => Nav.NavigateTo($"/issues/{id}");
+}

@@ -1,0 +1,113 @@
+@page "/issues/{Id:int}/delete"
+@inject IssueApiService ApiService
+@inject NavigationManager Nav
+
+<PageTitle>課題削除確認</PageTitle>
+
+<h1>課題削除確認</h1>
+
+@if (_loading)
+{
+    <p>読み込み中...</p>
+}
+else if (_issue is null)
+{
+    <p style="color: red;">@(_errorMessage ?? "課題が見つかりません。")</p>
+}
+else
+{
+    <p style="color: red; font-weight: bold;">この課題を削除してもよろしいですか？</p>
+
+    <table border="1" style="border-collapse: collapse; min-width: 600px;">
+        <tr>
+            <th style="text-align: left; padding: 4px 8px; width: 150px;">記入者氏名</th>
+            <td style="padding: 4px 8px;">@_issue.AuthorName</td>
+        </tr>
+        <tr>
+            <th style="text-align: left; padding: 4px 8px;">登録日時</th>
+            <td style="padding: 4px 8px;">@_issue.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</td>
+        </tr>
+        <tr>
+            <th style="text-align: left; padding: 4px 8px;">カテゴリ名</th>
+            <td style="padding: 4px 8px;">@_issue.Category</td>
+        </tr>
+        <tr>
+            <th style="text-align: left; padding: 4px 8px;">課題タイトル</th>
+            <td style="padding: 4px 8px;">@_issue.Title</td>
+        </tr>
+        <tr>
+            <th style="text-align: left; padding: 4px 8px;">課題の文面</th>
+            <td style="padding: 4px 8px; white-space: pre-wrap;">@_issue.Description</td>
+        </tr>
+        <tr>
+            <th style="text-align: left; padding: 4px 8px;">現在の状況</th>
+            <td style="padding: 4px 8px;">@IssueStatusHelper.GetDisplayName(_issue.Status)</td>
+        </tr>
+        <tr>
+            <th style="text-align: left; padding: 4px 8px;">解決の文面</th>
+            <td style="padding: 4px 8px; white-space: pre-wrap;">@_issue.Resolution</td>
+        </tr>
+        <tr>
+            <th style="text-align: left; padding: 4px 8px;">解決担当者名</th>
+            <td style="padding: 4px 8px;">@_issue.ResolverName</td>
+        </tr>
+        <tr>
+            <th style="text-align: left; padding: 4px 8px;">最終結果日時</th>
+            <td style="padding: 4px 8px;">@(_issue.ResolvedAt?.ToString("yyyy/MM/dd HH:mm:ss"))</td>
+        </tr>
+    </table>
+
+    @if (_errorMessage is not null)
+    {
+        <p style="color: red;">@_errorMessage</p>
+    }
+
+    <div style="margin-top: 1rem;">
+        <button @onclick="HandleDelete" disabled="@_deleting">削除</button>
+        <button @onclick="GoToDetail">戻る</button>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private IssueDto? _issue;
+    private bool _loading = true;
+    private bool _deleting;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _issue = await ApiService.GetByIdAsync(Id);
+            if (_issue is null) _errorMessage = "課題が見つかりません。";
+        }
+        catch
+        {
+            _errorMessage = "データの読み込みに失敗しました。";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task HandleDelete()
+    {
+        _deleting = true;
+        _errorMessage = null;
+        try
+        {
+            await ApiService.DeleteAsync(Id);
+            Nav.NavigateTo("/issues");
+        }
+        catch
+        {
+            _errorMessage = "削除に失敗しました。";
+            _deleting = false;
+        }
+    }
+
+    private void GoToDetail() => Nav.NavigateTo($"/issues/{Id}");
+}

@@ -1,0 +1,12 @@
+<Solution>
+  <Project Path="Api.Rest.IssueBoard/Api.Rest.IssueBoard.csproj">
+    <BuildDependency Project="Shared.Rest.IssueBoard/Shared.Rest.IssueBoard.csproj" />
+  </Project>
+  <Project Path="Net10.BWASM.Decoupled.Rest.IB/Net10.BWASM.Decoupled.Rest.IB.Client/Net10.BWASM.Decoupled.Rest.IB.Client.csproj">
+    <BuildDependency Project="Shared.Rest.IssueBoard/Shared.Rest.IssueBoard.csproj" />
+  </Project>
+  <Project Path="Net10.BWASM.Decoupled.Rest.IB/Net10.BWASM.Decoupled.Rest.IB/Net10.BWASM.Decoupled.Rest.IB.csproj">
+    <BuildDependency Project="Shared.Rest.IssueBoard/Shared.Rest.IssueBoard.csproj" />
+  </Project>
+  <Project Path="Shared.Rest.IssueBoard/Shared.Rest.IssueBoard.csproj" />
+</Solution>
